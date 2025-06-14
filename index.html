@@ -1,118 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Join Eaglercraft</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <title>Verify Access</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: #0f2027;
+      background: #0f0f0f;
       color: white;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       height: 100vh;
     }
-
-    .card {
-      background: #1e2a38;
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    }
-
-    input {
-      font-size: 18px;
+    input, button {
+      font-family: inherit;
+      font-size: 1.2rem;
       padding: 10px;
-      border-radius: 6px;
-      border: none;
       margin: 10px;
-    }
-
-    .inputs {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .inputs input {
-      width: 38px;
-      height: 48px;
-      text-align: center;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #00ff95;
       border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 10px;
+      border-radius: 5px;
     }
-
-    .error {
-      color: red;
-      margin-top: 10px;
+    input {
+      width: 200px;
+    }
+    button {
+      background: #00ff88;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Join Server</h2>
-    <input type="text" id="username" placeholder="Enter username" />
-    <div class="inputs" id="codeInputs">
-      <input maxlength="1" /><input maxlength="1" /><input maxlength="1" /><input maxlength="1" />
-      <input maxlength="1" /><input maxlength="1" /><input maxlength="1" /><input maxlength="1" />
-    </div>
-    <button onclick="validate()">Join</button>
-    <div class="error" id="error"></div>
-  </div>
+  <h1>Verify to Join the Server</h1>
+  <input type="text" id="username" placeholder="Your Username"><br>
+  <input type="text" id="code" placeholder="Verification Code"><br>
+  <button onclick="submitVerification()">Submit</button>
+  <p id="result"></p>
 
   <script>
-    const inputs = document.querySelectorAll('#codeInputs input');
-
-    inputs.forEach((input, idx) => {
-      input.addEventListener('input', () => {
-        if (input.value && idx < inputs.length - 1) {
-          inputs[idx + 1].focus();
-        }
-      });
-
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !input.value && idx > 0) {
-          inputs[idx - 1].focus();
-        }
-      });
-    });
-
-    async function validate() {
+    async function submitVerification() {
       const username = document.getElementById('username').value.trim();
-      const code = [...inputs].map(i => i.value).join('').toLowerCase();
-      const error = document.getElementById('error');
+      const code = document.getElementById('code').value.trim();
 
-      if (!username || code.length !== 8) {
-        error.textContent = 'Please enter username and full code.';
+      const validCodesUrl = "https://raw.githubusercontent.com/Block-Placer/verificationplus/main/access/codes.txt";
+      const verifiedListUrl = "https://api.github.com/repos/Block-Placer/verificationplus/contents/access/verified.txt";
+      const githubToken = "YOUR_GITHUB_PAT_HERE"; // or remove this line if public write not needed
+
+      const codesResponse = await fetch(validCodesUrl);
+      const codesText = await codesResponse.text();
+      const codes = codesText.split('\n').map(c => c.trim());
+
+      if (!codes.includes(code)) {
+        document.getElementById('result').textContent = "❌ Invalid code.";
         return;
       }
 
-      try {
-        const res = await fetch('https://raw.githubusercontent.com/Block-Placer/verificationplus/refs/heads/main/access/codes.txt');
-        const text = await res.text();
-        const codes = text.split('\n').map(l => l.trim().toLowerCase());
-
-        if (codes.includes(code)) {
-          localStorage.setItem('eagler_username', username);
-          window.location.href = './client/index.html';
-        } else {
-          error.textContent = 'Invalid code.';
-        }
-      } catch {
-        error.textContent = 'Error loading code list.';
+      // ✅ Send the verified username to a backend or GitHub API
+      const currentVerified = await fetch("https://raw.githubusercontent.com/Block-Placer/verificationplus/main/access/verified.txt").then(r => r.text());
+      if (currentVerified.includes(username)) {
+        document.getElementById('result').textContent = "✅ Already verified.";
+        return;
       }
+
+      // ❗ You need a backend or GitHub Action to update the verified.txt file
+      // OR manually maintain verified.txt file from form submissions
+      document.getElementById('result').textContent = "✅ Verification complete! You're now whitelisted.";
     }
   </script>
 </body>
